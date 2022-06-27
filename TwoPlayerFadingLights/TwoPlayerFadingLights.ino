@@ -17,7 +17,7 @@
 // Define the general set of hardware ports and parameters
 #define BUZZ_PIN        8
 #define LED_PIN         5
-#define NUM_LEDS        40
+#define NUM_LEDS        16
 #define BRIGHTNESS      15
 #define LIGHT_DECAY     2
 #define LED_TYPE        WS2812
@@ -31,10 +31,19 @@ CRGB p2color(0,100,50);
 
 bool firstEdit[NUM_LEDS];
 
+// define states
+enum play_mode{ISIDLE, EXPLORE, REACTION, COMBO}; //todo, check for inactivity, set idle state
+play_mode current_mode = ISIDLE;
+
+long prev_milli = 0;        // last time LED was updated
+long delay_interval = 4000;      
+int rand_led = 0;
+
 void setup()
 {
   Serial.begin(115200);
   Wire.begin();
+  
   p1.wakeUp_n_check();
   p2.wakeUp_n_check();
 
@@ -44,9 +53,76 @@ void setup()
 }
 
 void loop() {
-  ledController_Playerinput(p1.currentPos(), p1color);
-  ledController_Playerinput(p2.currentPos(), p2color);
+
+  //  according to mode
+  switch(current_mode) {
+    
+    case ISIDLE:
+      /*
+       * idle mode: 
+       * randomly lights up segments to generate interest
+       */
+      generate_random(millis(), delay_interval, CRGB(100, 0, 100));
+      break;
+      
+    case EXPLORE:
+      /*
+       * explore/default mode: 
+       * each players movement triggers segments to light up & generate sound
+       * if hit/overlap, play both sounds at higher volume
+       */
+      ledController_Playerinput(p1.currentPos(), p1color);
+      ledController_Playerinput(p2.currentPos(), p2color);
+      
+      // HIT/MATCH
+      if (p1.currentPos() != 0 && p1.currentPos() == p2.currentPos()){
+        Serial.println("HIT");
+        play_sounds(100);
+      }
+      else play_sounds(50);
+      
+      break;
+      
+    case REACTION:
+      /*
+       * reaction mode: 
+       * a randomly selected zone lights up
+       * first player to hit -> ring flashes green + success sound
+       * slower player/miss -> ring flashes red + failure sound
+       */
+      flash_ring(CRGB(0,100,100));
+      break;
+      
+    case COMBO:
+      /*
+       * combo mode: 
+       * step by step, each player adds a move to a combo (either successfully or wrong (ring flashes red)
+       */
+      break;
+  }
   ledController_update();
+}
+
+void play_sounds(byte volume){
+  //todo
+  return;
+}
+
+// random/idle mode
+void generate_random(long current_milli, long delay_int, CRGB color){
+  
+  if (current_milli - prev_milli > delay_int){
+    prev_milli = current_milli;
+    rand_led = random(16+1);
+  }  
+  ledController_Playerinput(rand_led, color);
+}
+
+//fash ring in solid colour
+void flash_ring(CRGB f_color){
+  for (int LED = 0; LED < NUM_LEDS; LED++) {
+    ledController_setcolor(LED, f_color);
+  }
 }
 
 void ledController_startup() {
