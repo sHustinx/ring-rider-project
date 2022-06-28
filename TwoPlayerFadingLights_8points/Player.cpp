@@ -59,17 +59,19 @@ int Player::currentPos()
 
   // Defines currently active state
   if      (planeY < -THRESHOLD)       left_F     = true;
-  else if (planeY < -THRESHOLD / 2)   left_h     = true;
+  //else if (planeY < -THRESHOLD / 2)   left_h     = true;
   if      (planeY > THRESHOLD)        right_F    = true;
-  else if (planeY > THRESHOLD  / 2)   right_h    = true;
+ // else if (planeY > THRESHOLD  / 2)   right_h    = true;
   if      (planeX < -THRESHOLD)       forward_F  = true;
-  else if (planeX < -THRESHOLD / 2)   forward_h  = true;
+  //else if (planeX < -THRESHOLD / 2)   forward_h  = true;
   if      (planeX > THRESHOLD)        backward_F = true;
-  else if (planeX > THRESHOLD  / 2)   backward_h = true;
-  if (!forward_h && !backward_h &&
-      !forward_F && !backward_F)    xNull        = true;
-  if (!left_h    && !right_h &&
-      !left_F    && !right_F)       yNull        = true;
+ // else if (planeX > THRESHOLD  / 2)   backward_h = true;
+  //if (!forward_h && !backward_h && !forward_F && !backward_F)    xNull        = true;
+ // if (!left_h    && !right_h && !left_F    && !right_F)       yNull        = true;
+
+      if (!forward_F && !backward_F)    xNull        = true;
+      if (!left_F    && !right_F)       yNull        = true;
+
 
 
   if (xNull      && left_F)  return 1;
