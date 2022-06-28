@@ -27,16 +27,24 @@ Player p1(0x69, THRESHOLD, -0.020, 0.007, -1.001, 3.711, 3.316, 1.718);
 Player p2(0x68, THRESHOLD, -0.064, 0.002, -0.843, 0.983, 0.694, -0.645);
 CRGB leds[NUM_LEDS]; // The accessable LED array.
 CRGB p1color(100,0,50);
-CRGB p2color(0,100,50);
+CRGB p2color(0,50,100);
 
 bool firstEdit[NUM_LEDS];
 
+
+/*
+ * todo saskia
+ * -check for inactivity, set idle state
+ * -check: player position doesnt reset to 0 sometimes (maybe also wiring)
+ * -debug reaction game
+ */
+ 
 // define states
-enum play_mode{ISIDLE, EXPLORE, REACTION, COMBO}; //todo, check for inactivity, set idle state
+enum play_mode{ISIDLE, EXPLORE, REACTION, COMBO}; 
 play_mode current_mode = ISIDLE;
 
 long prev_milli = 0;        // last time LED was updated
-long delay_interval = 4000;      
+long delay_interval = 2000;      
 int rand_led = 0;
 
 void setup()
@@ -77,7 +85,7 @@ void loop() {
       // HIT/MATCH
       if (p1.currentPos() != 0 && p1.currentPos() == p2.currentPos()){
         Serial.println("HIT");
-        play_sounds(100);
+        play_sounds(100); //todo
       }
       else play_sounds(50);
       
@@ -90,14 +98,33 @@ void loop() {
        * first player to hit -> ring flashes green + success sound
        * slower player/miss -> ring flashes red + failure sound
        */
-      flash_ring(CRGB(0,100,100));
+
+       // todo: differentiate btw rings (loser/winner)
+
+       ledController_Playerinput(p1.currentPos(), p1color);
+       ledController_Playerinput(p2.currentPos(), p2color);
+        
+       // HIT/MATCH
+      if (p1.currentPos() != 0 && p1.currentPos() == rand_led){
+        flash_ring(p1color);
+        play_sounds(100); //todo
+      }
+      else if (p2.currentPos() != 0 && p2.currentPos() == rand_led){
+        flash_ring(p2color);
+        play_sounds(100); //todo
+      }
+      
+      generate_random(millis(), delay_interval, CRGB(255, 0, 0));
       break;
       
     case COMBO:
       /*
        * combo mode: 
        * step by step, each player adds a move to a combo (either successfully or wrong (ring flashes red)
+       * 
+       * add array of prev moves to each player, update 
        */
+      flash_ring(p2color);
       break;
   }
   ledController_update();
@@ -113,7 +140,7 @@ void generate_random(long current_milli, long delay_int, CRGB color){
   
   if (current_milli - prev_milli > delay_int){
     prev_milli = current_milli;
-    rand_led = random(16+1);
+    rand_led = random(8)+1;
   }  
   ledController_Playerinput(rand_led, color);
 }
@@ -134,22 +161,22 @@ void ledController_startup() {
 void ledController_Playerinput(int PL_Pos, CRGB PL_color) {
   // Matches the active states with a quadrant of a circle (the LED circle)
   for (int LED = 0; LED < NUM_LEDS; LED++) {
-    if (LED <= int(NUM_LEDS / 16)                                       && PL_Pos == 1)  ledController_setcolor(LED, PL_color);
-    if (LED <= int(2  * NUM_LEDS / 16) && LED > int(NUM_LEDS / 16)      && PL_Pos == 2)  ledController_setcolor(LED, PL_color);
-    if (LED <= int(3  * NUM_LEDS / 16) && LED > int(2  * NUM_LEDS / 16) && PL_Pos == 3)  ledController_setcolor(LED, PL_color);
-    if (LED <= int(4  * NUM_LEDS / 16) && LED > int(3  * NUM_LEDS / 16) && PL_Pos == 4)  ledController_setcolor(LED, PL_color);
-    if (LED <= int(5  * NUM_LEDS / 16) && LED > int(4  * NUM_LEDS / 16) && PL_Pos == 5)  ledController_setcolor(LED, PL_color);
-    if (LED <= int(6  * NUM_LEDS / 16) && LED > int(5  * NUM_LEDS / 16) && PL_Pos == 6)  ledController_setcolor(LED, PL_color);
-    if (LED <= int(7  * NUM_LEDS / 16) && LED > int(6  * NUM_LEDS / 16) && PL_Pos == 7)  ledController_setcolor(LED, PL_color);
-    if (LED <= int(8  * NUM_LEDS / 16) && LED > int(7  * NUM_LEDS / 16) && PL_Pos == 8)  ledController_setcolor(LED, PL_color);
-    if (LED <= int(9  * NUM_LEDS / 16) && LED > int(8  * NUM_LEDS / 16) && PL_Pos == 9)  ledController_setcolor(LED, PL_color);
+    if (LED <= int(NUM_LEDS / 8)                                      && PL_Pos == 1)  ledController_setcolor(LED, PL_color);
+    if (LED <= int(2  * NUM_LEDS / 8) && LED > int(NUM_LEDS / 8)      && PL_Pos == 2)  ledController_setcolor(LED, PL_color);
+    if (LED <= int(3  * NUM_LEDS / 8) && LED > int(2  * NUM_LEDS / 8) && PL_Pos == 3)  ledController_setcolor(LED, PL_color);
+    if (LED <= int(4  * NUM_LEDS / 8) && LED > int(3  * NUM_LEDS / 8) && PL_Pos == 4)  ledController_setcolor(LED, PL_color);
+    if (LED <= int(5  * NUM_LEDS / 8) && LED > int(4  * NUM_LEDS / 8) && PL_Pos == 5)  ledController_setcolor(LED, PL_color);
+    if (LED <= int(6  * NUM_LEDS / 8) && LED > int(5  * NUM_LEDS / 8) && PL_Pos == 6)  ledController_setcolor(LED, PL_color);
+    if (LED <= int(7  * NUM_LEDS / 8) && LED > int(6  * NUM_LEDS / 8) && PL_Pos == 7)  ledController_setcolor(LED, PL_color);
+    if (                                 LED > int(7  * NUM_LEDS / 8) && PL_Pos == 8)  ledController_setcolor(LED, PL_color);
+    /*if (LED <= int(9  * NUM_LEDS / 16) && LED > int(8  * NUM_LEDS / 16) && PL_Pos == 9)  ledController_setcolor(LED, PL_color);
     if (LED <= int(10 * NUM_LEDS / 16) && LED > int(9  * NUM_LEDS / 16) && PL_Pos == 10) ledController_setcolor(LED, PL_color);
     if (LED <= int(11 * NUM_LEDS / 16) && LED > int(10 * NUM_LEDS / 16) && PL_Pos == 11) ledController_setcolor(LED, PL_color);
     if (LED <= int(12 * NUM_LEDS / 16) && LED > int(11 * NUM_LEDS / 16) && PL_Pos == 12) ledController_setcolor(LED, PL_color);
     if (LED <= int(13 * NUM_LEDS / 16) && LED > int(12 * NUM_LEDS / 16) && PL_Pos == 13) ledController_setcolor(LED, PL_color);
     if (LED <= int(14 * NUM_LEDS / 16) && LED > int(13 * NUM_LEDS / 16) && PL_Pos == 14) ledController_setcolor(LED, PL_color);
     if (LED <= int(15 * NUM_LEDS / 16) && LED > int(14 * NUM_LEDS / 16) && PL_Pos == 15) ledController_setcolor(LED, PL_color);
-    if (                                  LED > int(15 * NUM_LEDS / 16) && PL_Pos == 16) ledController_setcolor(LED, PL_color);
+    if (                                  LED > int(15 * NUM_LEDS / 16) && PL_Pos == 16) ledController_setcolor(LED, PL_color);*/
   }
 }
 
