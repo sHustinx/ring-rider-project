@@ -6,7 +6,7 @@
    spring riders into a conterller like feed for interaction with LED rings.
    This code also runs a collection of games using the controller/LED circle.
  *                                                                            *
-   Program written by Luiz F.S. Simão in the first half of 2022.
+   Program written by Luiz F.S. Simão & Saskia Hustinx in the first half of 2022.
    -------------------------------------------------------------------------- */
 
 #include "GY521.h"
@@ -18,11 +18,11 @@
 #define BUZZ_PIN        8
 #define LED_PIN         5
 #define NUM_LEDS        16
-#define BRIGHTNESS      15
+#define BRIGHTNESS      254
 #define LIGHT_DECAY     2
 #define LED_TYPE        WS2812
 #define COLOR_ORDER     GRB
-const float THRESHOLD = 0.25;
+const float THRESHOLD = 0.15;
 Player p1(0x69, THRESHOLD, -0.020, 0.007, -1.001, 3.711, 3.316, 1.718);
 Player p2(0x68, THRESHOLD, -0.064, 0.002, -0.843, 0.983, 0.694, -0.645);
 CRGB leds[NUM_LEDS]; // The accessable LED array.
@@ -30,22 +30,24 @@ CRGB p1color(100,0,50);
 CRGB p2color(0,50,100);
 
 bool firstEdit[NUM_LEDS];
-
-
-/*
- * todo saskia
- * -check for inactivity, set idle state
- * -check: player position doesnt reset to 0 sometimes (maybe also wiring)
- * -debug reaction game
- */
  
 // define states
 enum play_mode{ISIDLE, EXPLORE, REACTION, COMBO}; 
-play_mode current_mode = EXPLORE;
+play_mode current_mode = REACTION;
 
 long prev_milli = 0;        // last time LED was updated
-long delay_interval = 2000;      
+long idle_milli = 0;        // timer for idle state
+long delay_interval = 2000;   
+long idle_interval = 30000;    // 30 sec idle time
 int rand_led = 0;
+
+/*
+ * todo saskia
+ * -check: player position doesnt reset to 0 sometimes (maybe also wiring)
+ * -debug reaction game
+ * - fix delay in reaction game
+ * - implement combo game
+ */
 
 void setup()
 {
@@ -58,10 +60,15 @@ void setup()
   ledController_startup();
 
   Serial.println("start...");
+  idle_milli = millis();
+  flash_ring((0,0,0));
 }
 
 void loop() {
-
+  
+  delay(5); // todo remove?
+  check_idle(millis(), idle_interval);
+  
   //  according to mode
   switch(current_mode) {
     
@@ -83,8 +90,10 @@ void loop() {
       ledController_Playerinput(p2.currentPos(), p2color);
       
       // HIT/MATCH
-      if (p1.currentPos() != 0 && p1.currentPos() == p2.currentPos()){
-        Serial.println("HIT");
+      if (p1.currentPos() != 0 && (p1.currentPos() == p2.currentPos())){
+        Serial.println("HIT AT");
+        Serial.println(p1.currentPos());
+        Serial.println(p2.currentPos());
         play_sounds(100); //todo
       }
       else play_sounds(50);
@@ -124,7 +133,7 @@ void loop() {
        * 
        * add array of prev moves to each player, update 
        */
-      flash_ring(p2color);
+      flash_ring(CRGB(255,255,255));
       break;
   }
   ledController_update();
@@ -133,6 +142,26 @@ void loop() {
 void play_sounds(byte volume){
   //todo
   return;
+}
+
+
+// set to idle mode after inactivity
+void check_idle(long current_milli, long delay_int){
+
+  if ((p1.currentPos() != 0 || p2.currentPos() != 0) && current_mode == ISIDLE){
+    flash_ring((0,0,0));
+    idle_milli = current_milli;
+    current_mode = EXPLORE; //if movement, reset to base state
+    Serial.println("SET EXPLORE");
+    Serial.println(p1.currentPos());
+    Serial.println(p2.currentPos());
+  }
+  if (current_mode != ISIDLE && (current_milli - idle_milli > delay_int)){
+    flash_ring((0,0,0));
+    current_mode = ISIDLE; // set idle 
+    Serial.println("SET IDLE");
+    Serial.println(current_mode);
+  }  
 }
 
 // random/idle mode
