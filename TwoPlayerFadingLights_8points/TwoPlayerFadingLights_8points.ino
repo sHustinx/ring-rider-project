@@ -23,6 +23,7 @@
 #define LED_TYPE        WS2812
 #define COLOR_ORDER     GRB
 const float THRESHOLD = 0.15;
+int combo_len = 5;
 Player p1(0x69, THRESHOLD, -0.020, 0.007, -1.001, 3.711, 3.316, 1.718);
 Player p2(0x68, THRESHOLD, -0.064, 0.002, -0.843, 0.983, 0.694, -0.645);
 CRGB leds[NUM_LEDS]; // The accessable LED array.
@@ -33,7 +34,7 @@ bool firstEdit[NUM_LEDS];
  
 // define states
 enum play_mode{ISIDLE, EXPLORE, REACTION, COMBO}; 
-play_mode current_mode = REACTION;
+play_mode current_mode;
 
 long prev_milli = 0;        // last time LED was updated
 long idle_milli = 0;        // timer for idle state
@@ -45,9 +46,29 @@ int rand_led = 0;
  * todo saskia
  * -check: player position doesnt reset to 0 sometimes (maybe also wiring)
  * -debug reaction game
- * - fix delay in reaction game
  * - implement combo game
+ * - differentiate between players for gamemodes
+ * - secret code ? 
  */
+
+void set_game_mode(play_mode mode){
+
+  if (mode == COMBO){ //reset combos
+    for (int i=0; i<combo_len; i++){
+      p1.combo[i] = 0;
+      p2.combo[i] = 0;
+    }
+    p1.is_combo_mode = true;
+    p2.is_combo_mode = true;
+  }
+  else{
+    p1.is_combo_mode = false;
+    p2.is_combo_mode = false;
+  }
+  
+  flash_ring((0,0,0)); // reset ring/off
+  current_mode = mode;
+}
 
 void setup()
 {
@@ -62,11 +83,14 @@ void setup()
   Serial.println("start...");
   idle_milli = millis();
   flash_ring((0,0,0));
+
+  set_game_mode(COMBO);
+
 }
 
 void loop() {
   
-  delay(5); // todo remove?
+  delay(5); // todo check this: improves some issues with gyro updates
   check_idle(millis(), idle_interval);
   
   //  according to mode
@@ -134,9 +158,20 @@ void loop() {
        * add array of prev moves to each player, update 
        */
       flash_ring(CRGB(255,255,255));
+
+      if (p2.combo[0] != 0){
+        print_combo(p2.combo, combo_len);
+      }
       break;
   }
   ledController_update();
+}
+
+void print_combo(int arr[], int size){
+  for (int i = 0; i < size; ++i) {
+    Serial.print(arr[i]);
+  }
+  Serial.println("");
 }
 
 void play_sounds(byte volume){
@@ -149,16 +184,14 @@ void play_sounds(byte volume){
 void check_idle(long current_milli, long delay_int){
 
   if ((p1.currentPos() != 0 || p2.currentPos() != 0) && current_mode == ISIDLE){
-    flash_ring((0,0,0));
     idle_milli = current_milli;
-    current_mode = EXPLORE; //if movement, reset to base state
+    set_game_mode(EXPLORE); //if movement, reset to base state
     Serial.println("SET EXPLORE");
     Serial.println(p1.currentPos());
     Serial.println(p2.currentPos());
   }
   if (current_mode != ISIDLE && (current_milli - idle_milli > delay_int)){
-    flash_ring((0,0,0));
-    current_mode = ISIDLE; // set idle 
+    set_game_mode(ISIDLE); // set idle 
     Serial.println("SET IDLE");
     Serial.println(current_mode);
   }  
@@ -168,6 +201,7 @@ void check_idle(long current_milli, long delay_int){
 void generate_random(long current_milli, long delay_int, CRGB color){
   
   if (current_milli - prev_milli > delay_int){
+    flash_ring((0,0,0));
     prev_milli = current_milli;
     rand_led = random(8)+1;
   }  

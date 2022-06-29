@@ -33,8 +33,41 @@ void Player::wakeUp_n_check()
   sensor.setAccelSensitivity(2); // 16g
   sensor.setGyroSensitivity(1);  // 500 degrees/s
   sensor.setThrottle();
+  prev_pos = -1;
+  current_pos = 0;
+  is_combo_mode = false;
+  is_match = false;
   Serial.println("check");
 }
+
+
+void Player::check_combo(int c_pos, int p_pos, long c_millis, long match_duration){
+
+  if (c_pos != p_pos){ //reset counter
+    match_time = c_millis;
+    is_match = false;
+  }
+  if (c_pos != 0 && c_pos == p_pos && is_match == false){ //start counter
+    match_time = millis();
+    is_match = true;
+   } 
+  if (is_match && c_millis - match_time > match_duration){ // update combo values
+    Serial.println("MATCHED!!!!!");
+    for (int i=0; i<5; i++){
+      if (Player::combo[i] == 0){
+        Player::combo[i] = c_pos;
+        break;
+      }
+    }
+    match_time = c_millis;
+    is_match = false;
+    for (int i=0; i<5; i++){
+      Serial.println(Player::combo[i]);
+      
+    }
+  }
+}
+
 
 int Player::currentPos()
 {
@@ -49,6 +82,9 @@ int Player::currentPos()
   right_h = false;
   xNull = false;
   yNull = false;
+  prev_pos = current_pos;
+  current_pos = 0;
+  
 
   // Obtain sensor data and convert the input into some reasonable range
   sensor.read();
@@ -72,16 +108,18 @@ int Player::currentPos()
       if (!forward_F && !backward_F)    xNull        = true;
       if (!left_F    && !right_F)       yNull        = true;
 
+  
 
+  if (xNull      && left_F)  current_pos = 1;
+  if (forward_F  && left_F)  current_pos = 2;
+  if (forward_F  && yNull)   current_pos = 3;
+  if (forward_F  && right_F) current_pos = 4;
+  if (xNull      && right_F) current_pos = 5;
+  if (backward_F && right_F) current_pos = 6;
+  if (backward_F && yNull)   current_pos = 7; 
+  if (backward_F && left_F)  current_pos = 8;
 
-  if (xNull      && left_F)  return 1;
-  if (forward_F  && left_F)  return 2;
-  if (forward_F  && yNull)   return 3;
-  if (forward_F  && right_F) return 4;
-  if (xNull      && right_F) return 5;
-  if (backward_F && right_F) return 6;
-  if (backward_F && yNull)   return 7; 
-  if (backward_F && left_F)  return 8;
-  return 0;
-
+  if (is_combo_mode) check_combo(current_pos, prev_pos, millis(), 2000);
+  
+  return current_pos;
 }
