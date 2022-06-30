@@ -52,7 +52,7 @@ void Player::check_combo(int c_pos, int p_pos, long c_millis, long match_duratio
     is_match = true;
    } 
   if (is_match && c_millis - match_time > match_duration){ // update combo values
-    Serial.println("MATCHED!!!!!");
+    //Serial.println("MATCHED!!!!!");
     for (int i=0; i<5; i++){
       if (Player::combo[i] == 0){
         Player::combo[i] = c_pos;
@@ -61,10 +61,10 @@ void Player::check_combo(int c_pos, int p_pos, long c_millis, long match_duratio
     }
     match_time = c_millis;
     is_match = false;
-    for (int i=0; i<5; i++){
+    /*for (int i=0; i<5; i++){
       Serial.println(Player::combo[i]);
       
-    }
+    }*/
   }
 }
 

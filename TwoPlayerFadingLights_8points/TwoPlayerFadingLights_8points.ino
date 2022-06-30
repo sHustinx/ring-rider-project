@@ -22,7 +22,7 @@
 #define LIGHT_DECAY     2
 #define LED_TYPE        WS2812
 #define COLOR_ORDER     GRB
-const float THRESHOLD = 0.15;
+const float THRESHOLD = 0.25;
 int combo_len = 5;
 Player p1(0x69, THRESHOLD, -0.020, 0.007, -1.001, 3.711, 3.316, 1.718);
 Player p2(0x68, THRESHOLD, -0.064, 0.002, -0.843, 0.983, 0.694, -0.645);
@@ -39,9 +39,9 @@ play_mode current_mode;
 long prev_milli = 0;        // last time LED was updated
 long idle_milli = 0;        // timer for idle state
 long delay_interval = 2000;   
-long idle_interval = 30000;    // 30 sec idle time
+long idle_interval = 40000;    // 30 sec idle time
 int rand_led = 0;
-
+int combo_game_turn = 0;
 /*
  * todo saskia
  * -check: player position doesnt reset to 0 sometimes (maybe also wiring)
@@ -49,6 +49,8 @@ int rand_led = 0;
  * - implement combo game
  * - differentiate between players for gamemodes
  * - secret code ? 
+ * - reset game if turns up
+ * - parametrisier array len
  */
 
 void set_game_mode(play_mode mode){
@@ -57,9 +59,8 @@ void set_game_mode(play_mode mode){
     for (int i=0; i<combo_len; i++){
       p1.combo[i] = 0;
       p2.combo[i] = 0;
+      combo_game_turn = 0;
     }
-    p1.is_combo_mode = true;
-    p2.is_combo_mode = true;
   }
   else{
     p1.is_combo_mode = false;
@@ -91,7 +92,7 @@ void setup()
 void loop() {
   
   delay(5); // todo check this: improves some issues with gyro updates
-  check_idle(millis(), idle_interval);
+  //check_idle(millis(), idle_interval);
   
   //  according to mode
   switch(current_mode) {
@@ -157,14 +158,58 @@ void loop() {
        * 
        * add array of prev moves to each player, update 
        */
-      flash_ring(CRGB(255,255,255));
 
-      if (p2.combo[0] != 0){
-        print_combo(p2.combo, combo_len);
-      }
+      ledController_Playerinput(p1.currentPos(), p1color);
+      ledController_Playerinput(p2.currentPos(), p2color);
+
+      if (combo_game_turn%2 == 0) play_combo(p1, p2, combo_game_turn);
+      else play_combo(p2, p1, combo_game_turn);
+      
       break;
   }
   ledController_update();
+}
+
+//game function
+void play_combo(Player &player, Player &opponent, int turn){
+   
+    player.is_combo_mode = true;
+    opponent.is_combo_mode = false;
+    
+    if (player.combo[turn] != 0){
+      opponent.is_combo_mode = true;
+      player.is_combo_mode = false;
+      if (opponent.combo[turn] != 0){
+        if (compare_combo(opponent.combo, player.combo, combo_len)){
+          flash_ring(CRGB(0,255,0));
+          combo_game_turn++;
+          
+          Serial.println("C SUCCESS");
+          print_combo(player.combo, combo_len);
+          print_combo(opponent.combo, combo_len);
+        }
+        else{
+          flash_ring(CRGB(255,0,0));
+          
+          Serial.println("C FAIL");
+          print_combo(player.combo, combo_len);
+          print_combo(opponent.combo, combo_len);
+          
+          opponent.combo[turn] = 0; //reset last move
+        }
+      }
+    }
+}
+
+void display_combo(int arr[], int len){
+  
+}
+
+bool compare_combo(int arr1[], int arr2[], int size){
+  for (int i= 0; i<size; i++){
+    if (arr1[i] != arr2[i]) return false;
+  }
+  return true;
 }
 
 void print_combo(int arr[], int size){
