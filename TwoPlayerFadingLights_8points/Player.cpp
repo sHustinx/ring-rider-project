@@ -1,6 +1,6 @@
 #include "Player.h"
 
-Player::Player(int address, float th, float ax, float ay, float az, float gx, float gy, float gz)
+Player::Player(int address, float th, float ax, float ay, float az, float gx, float gy, float gz, int combo_len)
 {
   if (address != 0)
   {
@@ -15,6 +15,7 @@ Player::Player(int address, float th, float ax, float ay, float az, float gx, fl
     sensor.gze = gz;
 
     isCPU = false;
+    combo_length = combo_len;
   }
   else
   {
@@ -35,25 +36,30 @@ void Player::wakeUp_n_check()
   sensor.setThrottle();
   prev_pos = -1;
   current_pos = 0;
+
+  combo[combo_length] = {};
   is_combo_mode = false;
   is_match = false;
   Serial.println("check");
 }
 
 
+// function to check if a section has been hit longer than timespan (to avoid mult. triggers)
 void Player::check_combo(int c_pos, int p_pos, long c_millis, long match_duration){
 
-  if (c_pos != p_pos){ //reset counter
+  // reset counter, if position changes
+  if (c_pos != p_pos){ 
     match_time = c_millis;
     is_match = false;
   }
-  if (c_pos != 0 && c_pos == p_pos && is_match == false){ //start counter
+  // start counter if position stays identical
+  if (c_pos != 0 && c_pos == p_pos && is_match == false){ 
     match_time = millis();
     is_match = true;
    } 
-  if (is_match && c_millis - match_time > match_duration){ // update combo values
-    //Serial.println("MATCHED!!!!!");
-    for (int i=0; i<5; i++){
+  if (is_match && c_millis - match_time > match_duration){ 
+    // add move to players combo-array if held for set duration
+    for (int i=0; i<combo_length; i++){
       if (Player::combo[i] == 0){
         Player::combo[i] = c_pos;
         break;
@@ -61,10 +67,6 @@ void Player::check_combo(int c_pos, int p_pos, long c_millis, long match_duratio
     }
     match_time = c_millis;
     is_match = false;
-    /*for (int i=0; i<5; i++){
-      Serial.println(Player::combo[i]);
-      
-    }*/
   }
 }
 
@@ -119,7 +121,8 @@ int Player::currentPos()
   if (backward_F && yNull)   current_pos = 7; 
   if (backward_F && left_F)  current_pos = 8;
 
-  if (is_combo_mode) check_combo(current_pos, prev_pos, millis(), 2000);
+  // if player is in combo-mode check for move-updates 
+  if (is_combo_mode) check_combo(current_pos, prev_pos, millis(), 1500); 
   
   return current_pos;
 }
