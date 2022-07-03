@@ -13,6 +13,8 @@
 #include "math.h"
 #include <FastLED.h>
 #include "Player.h"
+#include <WaveHC.h>
+#include <WaveUtil.h>
 
 // Define the general set of hardware ports and parameters
 #define BUZZ_PIN        8
@@ -22,6 +24,8 @@
 #define LIGHT_DECAY     2
 #define LED_TYPE        WS2812
 #define COLOR_ORDER     GRB
+#define FILE_COUNT      8
+#define PLAY_TIME       300
 const float THRESHOLD = 0.25;
 
 int combo_len = 4;
@@ -30,8 +34,15 @@ Player p2(0x68, THRESHOLD, -0.064, 0.002, -0.843, 0.983, 0.694, -0.645, combo_le
 CRGB leds[NUM_LEDS]; // The accessable LED array.
 CRGB p1color(100, 0, 50);
 CRGB p2color(0, 50, 100);
+SdReader card;    // This object holds the information for the card
+FatVolume vol;    // This holds the information for the partition on the card
+FatReader root;   // This holds the information for the volumes root directory
+FatReader file;   // This object represent the WAV file 
+WaveHC wave;      // This is the only wave (audio) object, since we will only play one at a time
 
 bool firstEdit[NUM_LEDS];
+uint16_t fileIndex[FILE_COUNT];
+char fileLetter[] =  {'1', '2', '3', '4', '5', '6', '7', '8'}; 
 
 // define states
 enum play_mode {ISIDLE, EXPLORE, REACTION, COMBO};
@@ -85,6 +96,7 @@ void setup()
   p2.wakeUp_n_check();
 
   ledController_startup();
+  audioController_startup();
 
   Serial.println("start...");
   idle_milli = millis();
@@ -378,4 +390,50 @@ void ledController_update() {
   FastLED.show(); // Renders the LED's lights
   for (int LED = 0; LED < NUM_LEDS; LED++) leds[LED].subtractFromRGB(LIGHT_DECAY); // Turns off all LEDs
   for (int i = 0; i < NUM_LEDS; i++) firstEdit[i] = true;
+}
+
+void audioController_startup(){
+  card.init();
+  // enable optimized read - some cards may timeout
+  card.partialBlockRead(true);
+  vol.init(card);
+  root.openRoot(vol);
+
+  audioController_bibliographFiles(); 
+}
+
+void audioController_bibliographFiles(){
+  char name[13]; // editable string of size 14 characters
+  
+  // Upload the generic name of the files into the "name" array
+  strcpy_P(name, PSTR("Piano(x).wav"));
+  
+  for (uint8_t i = 0; i < FILE_COUNT; i++) {
+    
+    // Make file name by replacing 'x' with the actual value that appears in the name of the file
+    name[6] = fileLetter[i];
+    
+    // Open file by name
+    file.open(root, name);
+    // Save file's index (byte offset of directory entry divided by entry size)
+    // /32-1 is however the library just so happen to work with, no clue what it means
+    fileIndex[i] = root.readPosition()/32 - 1;   
+  }
+  PgmPrintln("Done");
+}
+
+void audioController_playByIndex(uint8_t index){
+  // start time
+  uint32_t t = millis();
+  
+  // open by index
+  file.open(root, fileIndex[index]);
+  
+  // create and play Wave
+  wave.create(file);
+  wave.play();
+
+  // stop after PLAY_TIME ms
+  while((millis() - t) < PLAY_TIME);
+  wave.stop();
 }
