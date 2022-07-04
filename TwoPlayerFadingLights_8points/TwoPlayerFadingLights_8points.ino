@@ -128,9 +128,7 @@ void loop() {
         // // serial.println("HIT AT");
         // serial.println(p1.currentPos());
         // serial.println(p2.currentPos());
-        //play_sounds(100); //todo
       }
-     // else play_sounds(50);
 
       break;
 
@@ -150,13 +148,12 @@ void loop() {
         flash_ring(CRGB(0, 0, 0));
         flash_ring(p1color);
         delay(500);
-        play_sounds(100); //todo
       }
       else if (p2.currentPos() != 0 && p2.currentPos() == rand_led) {
         flash_ring(CRGB(0, 0, 0));
         flash_ring(p2color);
         delay(500);
-        play_sounds(100); //todo
+
       }
 
       generate_random(millis(), delay_interval, CRGB(255, 0, 0));
@@ -170,18 +167,19 @@ void loop() {
          add array of prev moves to each player, update
       */
 
-      ledController_Playerinput(p1.currentPos(), p1color);
+      /*ledController_Playerinput(p1.currentPos(), p1color);
       ledController_Playerinput(p2.currentPos(), p2color);
 
 
       if (combo_game_turn % 2 == 0) play_combo(p1, p2, combo_game_turn);
-      else play_combo(p2, p1, combo_game_turn);
+      else play_combo(p2, p1, combo_game_turn);*/
 
       break;
   }
   ledController_update();
 }
 
+/*
 // fill combo-array with zeroes
 void reset_combo(byte arr[], byte len) {
   for (byte i = 0; i < len; i++) {
@@ -249,8 +247,8 @@ void play_combo(Player &player, Player &opponent, byte turn) {
       }
       // testing output
       // serial.println(turn);
-      print_combo(player.combo, combo_len);
-      print_combo(opponent.combo, combo_len);
+      //print_combo(player.combo, combo_len);
+      //print_combo(opponent.combo, combo_len);
     }
   }
 }
@@ -278,19 +276,16 @@ bool compare_combo(byte arr1[], byte arr2[], byte len) {
   return true;
 }
 
+*/
+
 // print combo array to // serial monitor
-void print_combo(byte arr[], byte len) {
+/*void print_combo(byte arr[], byte len) {
   for (byte i = 0; i < len; ++i) {
     // serial.print(arr[i]);
   }
   // serial.println("");
-}
+}*/
 
-// todo, play sounds when triggered
-void play_sounds(byte volume) {
-  //todo
-  return;
-}
 
 
 // set to idle mode after set period of inactivity
