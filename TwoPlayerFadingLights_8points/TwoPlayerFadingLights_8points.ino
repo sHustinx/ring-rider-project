@@ -10,14 +10,12 @@
    -------------------------------------------------------------------------- */
 
 #include "GY521.h"
-#include "math.h"
 #include <FastLED.h>
 #include "Player.h"
 #include <WaveHC.h>
 #include <WaveUtil.h>
 
 // Define the general set of hardware ports and parameters
-#define BUZZ_PIN        8
 #define LED_PIN         5
 #define NUM_LEDS        16
 #define BRIGHTNESS      254
@@ -26,14 +24,15 @@
 #define COLOR_ORDER     GRB
 #define FILE_COUNT      8
 #define PLAY_TIME       300
-const float THRESHOLD = 0.25;
 
-const uint8_t combo_len = 4;
+const float THRESHOLD = 0.25;
+const byte combo_len = 4;
 Player p1(0x69, THRESHOLD, -0.020, 0.007, -1.001, 3.711, 3.316, 1.718, combo_len);
 Player p2(0x68, THRESHOLD, -0.064, 0.002, -0.843, 0.983, 0.694, -0.645, combo_len);
 CRGB leds[NUM_LEDS]; // The accessable LED array.
 CRGB p1color(100, 0, 50);
 CRGB p2color(0, 50, 100);
+
 SdReader card;    // This object holds the information for the card
 FatVolume vol;    // This holds the information for the partition on the card
 FatReader root;   // This holds the information for the volumes root directory
@@ -41,7 +40,7 @@ FatReader file;   // This object represent the WAV file
 WaveHC wave;      // This is the only wave (audio) object, since we will only play one at a time
 
 bool firstEdit[NUM_LEDS];
-uint16_t fileIndex[FILE_COUNT];
+byte fileIndex[FILE_COUNT];
 const char fileLetter[] =  {'1', '2', '3', '4', '5', '6', '7', '8'}; 
 
 // define states
@@ -50,30 +49,19 @@ play_mode current_mode;
 
 long prev_milli = 0;        // last time LED was updated
 long idle_milli = 0;        // timer for idle state
-const uint16_t delay_interval = 2000;
-const uint16_t idle_interval = 40000;    // 40 sec idle time
-uint8_t rand_led = 0;
-uint8_t combo_game_turn = 0;
+uint16_t delay_interval = 2000;
+uint16_t idle_interval = 40000;    // 40 sec idle time
+byte rand_led = 0;
+byte combo_game_turn = 0;
 bool move_displayed = false;
 
-const uint8_t S_COMBO_LEN = 4;
-const uint8_t s_combo[S_COMBO_LEN] = {2, 2, 2, 2}; //secret bonus combo
-
-
-/*
-   todo with luiz
-   - check: player position doesnt reset to 0 sometimes (maybe also wiring)
-   - differentiate between players for gamemodes
-   - address both LED rings
-
-*/
-
+byte s_combo[4] = {2, 2, 2, 2}; //secret bonus combo
 
 // setter for gamemode, resets LED ring and game stats for combo-mode
 void set_game_mode(play_mode mode) {
 
   if (mode == COMBO) { //reset combos
-    for (int i = 0; i < combo_len; i++) {
+    for (byte i = 0; i < combo_len; i++) {
       p1.combo[i] = 0;
       p2.combo[i] = 0;
     }
@@ -195,8 +183,8 @@ void loop() {
 }
 
 // fill combo-array with zeroes
-void reset_combo(int arr[], int len) {
-  for (int i = 0; i < len; i++) {
+void reset_combo(byte arr[], byte len) {
+  for (byte i = 0; i < len; i++) {
     arr[i] = 0;
   }
 }
@@ -210,7 +198,7 @@ void play_secret_bonus() {
 }
 
 // combo game function
-void play_combo(Player &player, Player &opponent, int turn) {
+void play_combo(Player &player, Player &opponent, byte turn) {
 
   //restart game after end
   if (turn == combo_len) {
@@ -232,7 +220,7 @@ void play_combo(Player &player, Player &opponent, int turn) {
     if (!move_displayed) { 
       
       //check for secret combo
-      if (turn == S_COMBO_LEN - 1 && compare_combo(s_combo, player.combo, combo_len)) play_secret_bonus(); 
+      if (turn == combo_len - 1 && compare_combo(s_combo, player.combo, combo_len)) play_secret_bonus(); 
 
       // display previous moves and reset own array
       display_combo(player.combo, combo_len);
@@ -268,9 +256,9 @@ void play_combo(Player &player, Player &opponent, int turn) {
 }
 
 // display all moves that need to be repeated
-void display_combo(int arr[], int len) {
+void display_combo(byte arr[], byte len) {
   delay(500);
-  for (int i = 0; i < len; i++) {
+  for (byte i = 0; i < len; i++) {
     if (arr[i] != 0) {
       flash_ring(CRGB(0, 0, 0));
       ledController_Playerinput(arr[i], CRGB(255, 255, 0));
@@ -283,16 +271,16 @@ void display_combo(int arr[], int len) {
 }
 
 // compare combo-array of two players
-bool compare_combo(int arr1[], int arr2[], int size) {
-  for (int i = 0; i < size; i++) {
+bool compare_combo(byte arr1[], byte arr2[], byte len) {
+  for (byte i = 0; i < len; i++) {
     if (arr1[i] != arr2[i]) return false;
   }
   return true;
 }
 
 // print combo array to // serial monitor
-void print_combo(int arr[], int size) {
-  for (int i = 0; i < size; ++i) {
+void print_combo(byte arr[], byte len) {
+  for (byte i = 0; i < len; ++i) {
     // serial.print(arr[i]);
   }
   // serial.println("");
@@ -337,7 +325,7 @@ void generate_random(long current_milli, long delay_int, CRGB color) {
 
 // flash LED ring in solid colour
 void flash_ring(CRGB f_color) {
-  for (int LED = 0; LED < NUM_LEDS; LED++) {
+  for (byte LED = 0; LED < NUM_LEDS; LED++) {
     ledController_setcolor(LED, f_color);
   }
   ledController_update();
@@ -347,26 +335,26 @@ void flash_ring(CRGB f_color) {
 void ledController_startup() {
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness(  BRIGHTNESS );
-  for (int i = 0; i < NUM_LEDS; i++) firstEdit[i] = true;
+  for (byte i = 0; i < NUM_LEDS; i++) firstEdit[i] = true;
 }
 
 // set adressed sections/LEDs
-void ledController_Playerinput(int PL_Pos, CRGB PL_color) {
+void ledController_Playerinput(byte PL_Pos, CRGB PL_color) {
   // Matches the active states with a quadrant of a circle (the LED circle)
-  for (int LED = 0; LED < NUM_LEDS; LED++) {
-    if (LED < int(1 * NUM_LEDS / 8)                                    && PL_Pos == 1) ledController_setcolor(LED, PL_color);
-    if (LED < int(2 * NUM_LEDS / 8) && LED >= int(1 * NUM_LEDS / 8) && PL_Pos == 2) ledController_setcolor(LED, PL_color);
-    if (LED < int(3 * NUM_LEDS / 8) && LED >= int(2 * NUM_LEDS / 8) && PL_Pos == 3) ledController_setcolor(LED, PL_color);
-    if (LED < int(4 * NUM_LEDS / 8) && LED >= int(3 * NUM_LEDS / 8) && PL_Pos == 4) ledController_setcolor(LED, PL_color);
-    if (LED < int(5 * NUM_LEDS / 8) && LED >= int(4 * NUM_LEDS / 8) && PL_Pos == 5) ledController_setcolor(LED, PL_color);
-    if (LED < int(6 * NUM_LEDS / 8) && LED >= int(5 * NUM_LEDS / 8) && PL_Pos == 6) ledController_setcolor(LED, PL_color);
-    if (LED < int(7 * NUM_LEDS / 8) && LED >= int(6 * NUM_LEDS / 8) && PL_Pos == 7) ledController_setcolor(LED, PL_color);
-    if (                                LED >= int(7 * NUM_LEDS / 8) && PL_Pos == 8) ledController_setcolor(LED, PL_color);
+  for (byte LED = 0; LED < NUM_LEDS; LED++) {
+    if (LED < byte(1 * NUM_LEDS / 8)                                    && PL_Pos == 1) ledController_setcolor(LED, PL_color);
+    if (LED < byte(2 * NUM_LEDS / 8) && LED >= byte(1 * NUM_LEDS / 8) && PL_Pos == 2) ledController_setcolor(LED, PL_color);
+    if (LED < byte(3 * NUM_LEDS / 8) && LED >= byte(2 * NUM_LEDS / 8) && PL_Pos == 3) ledController_setcolor(LED, PL_color);
+    if (LED < byte(4 * NUM_LEDS / 8) && LED >= byte(3 * NUM_LEDS / 8) && PL_Pos == 4) ledController_setcolor(LED, PL_color);
+    if (LED < byte(5 * NUM_LEDS / 8) && LED >= byte(4 * NUM_LEDS / 8) && PL_Pos == 5) ledController_setcolor(LED, PL_color);
+    if (LED < byte(6 * NUM_LEDS / 8) && LED >= byte(5 * NUM_LEDS / 8) && PL_Pos == 6) ledController_setcolor(LED, PL_color);
+    if (LED < byte(7 * NUM_LEDS / 8) && LED >= byte(6 * NUM_LEDS / 8) && PL_Pos == 7) ledController_setcolor(LED, PL_color);
+    if (                                LED >= byte(7 * NUM_LEDS / 8) && PL_Pos == 8) ledController_setcolor(LED, PL_color);
   }
 }
 
 // LED color function/transitions
-void ledController_setcolor(int iteration, CRGB PL_color) {
+void ledController_setcolor(byte iteration, CRGB PL_color) {
   if (firstEdit[iteration]) {
     leds[iteration].setRGB(PL_color.r, PL_color.g, PL_color.b);
     firstEdit[iteration] = false;
@@ -391,8 +379,8 @@ void ledController_setcolor(int iteration, CRGB PL_color) {
 // call to update LED ring
 void ledController_update() {
   FastLED.show(); // Renders the LED's lights
-  for (int LED = 0; LED < NUM_LEDS; LED++) leds[LED].subtractFromRGB(LIGHT_DECAY); // Turns off all LEDs
-  for (int i = 0; i < NUM_LEDS; i++) firstEdit[i] = true;
+  for (byte LED = 0; LED < NUM_LEDS; LED++) leds[LED].subtractFromRGB(LIGHT_DECAY); // Turns off all LEDs
+  for (byte i = 0; i < NUM_LEDS; i++) firstEdit[i] = true;
 }
 
 void audioController_startup(){

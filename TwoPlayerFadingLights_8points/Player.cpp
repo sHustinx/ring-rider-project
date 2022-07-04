@@ -1,6 +1,6 @@
 #include "Player.h"
 
-Player::Player(int address, float th, float ax, float ay, float az, float gx, float gy, float gz, int combo_len)
+Player::Player(int address, float th, float ax, float ay, float az, float gx, float gy, float gz, byte combo_len)
 {
   if (address != 0)
   {
@@ -27,8 +27,8 @@ void Player::wakeUp_n_check()
 {
   while (sensor.wakeup() == false) // establishes connection to the module
   {
-    Serial.print(millis());
-    Serial.println("\tCould not connect to sensor");
+    //Serial.print(millis());
+    //Serial.println("\tCould not connect to sensor");
     delay(1000);
   }
   sensor.setAccelSensitivity(2); // 16g
@@ -40,12 +40,12 @@ void Player::wakeUp_n_check()
   combo[combo_length] = {};
   is_combo_mode = false;
   is_match = false;
-  Serial.println("check");
+  //Serial.println("check");
 }
 
 
 // function to check if a section has been hit longer than timespan (to avoid mult. triggers)
-void Player::check_combo(int c_pos, int p_pos, long c_millis, long match_duration){
+void Player::check_combo(byte c_pos, byte p_pos, long c_millis, long match_duration){
 
   // reset counter, if position changes
   if (c_pos != p_pos){ 
@@ -71,7 +71,7 @@ void Player::check_combo(int c_pos, int p_pos, long c_millis, long match_duratio
 }
 
 
-int Player::currentPos()
+byte Player::currentPos()
 {
   // Reset states
   forward_F = false;
