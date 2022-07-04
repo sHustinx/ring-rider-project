@@ -28,7 +28,7 @@
 #define PLAY_TIME       300
 const float THRESHOLD = 0.25;
 
-int combo_len = 4;
+const uint8_t combo_len = 4;
 Player p1(0x69, THRESHOLD, -0.020, 0.007, -1.001, 3.711, 3.316, 1.718, combo_len);
 Player p2(0x68, THRESHOLD, -0.064, 0.002, -0.843, 0.983, 0.694, -0.645, combo_len);
 CRGB leds[NUM_LEDS]; // The accessable LED array.
@@ -42,7 +42,7 @@ WaveHC wave;      // This is the only wave (audio) object, since we will only pl
 
 bool firstEdit[NUM_LEDS];
 uint16_t fileIndex[FILE_COUNT];
-char fileLetter[] =  {'1', '2', '3', '4', '5', '6', '7', '8'}; 
+const char fileLetter[] =  {'1', '2', '3', '4', '5', '6', '7', '8'}; 
 
 // define states
 enum play_mode {ISIDLE, EXPLORE, REACTION, COMBO};
@@ -50,14 +50,15 @@ play_mode current_mode;
 
 long prev_milli = 0;        // last time LED was updated
 long idle_milli = 0;        // timer for idle state
-long delay_interval = 2000;
-long idle_interval = 40000;    // 40 sec idle time
-int rand_led = 0;
-int combo_game_turn = 0;
+const uint16_t delay_interval = 2000;
+const uint16_t idle_interval = 40000;    // 40 sec idle time
+uint8_t rand_led = 0;
+uint8_t combo_game_turn = 0;
 bool move_displayed = false;
 
-int s_combo[4] = {2, 2, 2, 2}; //secret bonus combo
-int s_combo_len = 4;
+const uint8_t S_COMBO_LEN = 4;
+const uint8_t s_combo[S_COMBO_LEN] = {2, 2, 2, 2}; //secret bonus combo
+
 
 /*
    todo with luiz
@@ -89,7 +90,7 @@ void set_game_mode(play_mode mode) {
 
 void setup()
 {
-  Serial.begin(115200);
+  // serial.begin(115200);
   Wire.begin();
 
   p1.wakeUp_n_check();
@@ -98,11 +99,11 @@ void setup()
   ledController_startup();
   audioController_startup();
 
-  Serial.println("start...");
-  idle_milli = millis();
+  // serial.println("start...");
+ // idle_milli = millis();
   flash_ring(CRGB(0, 0, 0));
 
-  set_game_mode(COMBO);
+  set_game_mode(EXPLORE);
 
 }
 
@@ -130,16 +131,18 @@ void loop() {
          if hit/overlap, play both sounds at higher volume
       */
       ledController_Playerinput(p1.currentPos(), p1color);
+      if (p1.currentPos() != 0) audioController_playByIndex(p1.currentPos());
       ledController_Playerinput(p2.currentPos(), p2color);
+      if (p2.currentPos() != 0) audioController_playByIndex(p2.currentPos());
 
       // HIT/MATCH
       if (p1.currentPos() != 0 && (p1.currentPos() == p2.currentPos())) {
-        Serial.println("HIT AT");
-        Serial.println(p1.currentPos());
-        Serial.println(p2.currentPos());
-        play_sounds(100); //todo
+        // // serial.println("HIT AT");
+        // serial.println(p1.currentPos());
+        // serial.println(p2.currentPos());
+        //play_sounds(100); //todo
       }
-      else play_sounds(50);
+     // else play_sounds(50);
 
       break;
 
@@ -211,7 +214,7 @@ void play_combo(Player &player, Player &opponent, int turn) {
 
   //restart game after end
   if (turn == combo_len) {
-    Serial.println("reset fired");
+    // serial.println("reset fired");
     set_game_mode(COMBO); 
     return;
   }
@@ -229,7 +232,7 @@ void play_combo(Player &player, Player &opponent, int turn) {
     if (!move_displayed) { 
       
       //check for secret combo
-      if (turn == s_combo_len - 1 && compare_combo(s_combo, player.combo, combo_len)) play_secret_bonus(); 
+      if (turn == S_COMBO_LEN - 1 && compare_combo(s_combo, player.combo, combo_len)) play_secret_bonus(); 
 
       // display previous moves and reset own array
       display_combo(player.combo, combo_len);
@@ -247,17 +250,17 @@ void play_combo(Player &player, Player &opponent, int turn) {
         delay(500);
         combo_game_turn++;
         move_displayed  = false;
-        Serial.println("COMBO SUCCESS");
+        // serial.println("COMBO SUCCESS");
       }
       else {
         // moves dont match, flash red, retry
         flash_ring(CRGB(255, 0, 0));
         delay(500);
         move_displayed  = false;
-        Serial.println("COMBO FAIL");
+        // serial.println("COMBO FAIL");
       }
       // testing output
-      Serial.println(turn);
+      // serial.println(turn);
       print_combo(player.combo, combo_len);
       print_combo(opponent.combo, combo_len);
     }
@@ -287,12 +290,12 @@ bool compare_combo(int arr1[], int arr2[], int size) {
   return true;
 }
 
-// print combo array to serial monitor
+// print combo array to // serial monitor
 void print_combo(int arr[], int size) {
   for (int i = 0; i < size; ++i) {
-    Serial.print(arr[i]);
+    // serial.print(arr[i]);
   }
-  Serial.println("");
+  // serial.println("");
 }
 
 // todo, play sounds when triggered
@@ -309,15 +312,15 @@ void check_idle(long current_milli, long delay_int) {
     //if movement, reset to base state (EXPLORE)
     idle_milli = current_milli;
     set_game_mode(EXPLORE); 
-    /*Serial.println("SET EXPLORE");
-    Serial.println(p1.currentPos());
-    Serial.println(p2.currentPos());*/
+    /*// serial.println("SET EXPLORE");
+    // serial.println(p1.currentPos());
+    // serial.println(p2.currentPos());*/
   }
   if (current_mode != ISIDLE && (current_milli - idle_milli > delay_int)) {
     //if inactive, set (IDLE)
     set_game_mode(ISIDLE); 
-    /*Serial.println("SET IDLE");
-    Serial.println(current_mode);*/
+    /*// serial.println("SET IDLE");
+    // serial.println(current_mode);*/
   }
 }
 
