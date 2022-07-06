@@ -17,9 +17,9 @@
 // Define the general set of hardware ports and parameters
 #define BUZZ_PIN        8
 #define LED_PIN         5
-#define NUM_LEDS        16
+#define NUM_LEDS        137
 #define BRIGHTNESS      254
-#define LIGHT_DECAY     2
+#define LIGHT_DECAY     200
 #define LED_TYPE        WS2812
 #define COLOR_ORDER     GRB
 #define FILE_COUNT      8
@@ -101,7 +101,7 @@ void loop() {
 
   //delay(5);
 
-  check_idle(millis(), idle_interval);
+  //check_idle(millis(), idle_interval);
 
   //  according to mode
   switch (current_mode) {
