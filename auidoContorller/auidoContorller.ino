@@ -23,6 +23,7 @@ void setup() {
 
   Wire.begin(0x67);                // join I2C bus with address 0x67
   Wire.onReceive(receiveEvent); // register event
+  Serial.println("setup");
 }
 
 void loop() {

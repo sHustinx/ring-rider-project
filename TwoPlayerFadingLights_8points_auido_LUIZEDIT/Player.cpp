@@ -63,7 +63,7 @@ void Player::check_combo(byte c_pos, byte p_pos, long c_millis, long match_durat
     for (int i=0; i<combo_length; i++){
       if (Player::combo[i] == 0){
         Player::combo[i] = c_pos;
-        //audioTrigger(99);
+        audioTrigger(97); // conf. sound
         break;
       }
     }

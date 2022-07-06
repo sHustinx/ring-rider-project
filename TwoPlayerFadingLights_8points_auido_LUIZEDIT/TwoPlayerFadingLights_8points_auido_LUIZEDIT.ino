@@ -66,7 +66,7 @@ void set_game_mode(play_mode mode) {
   }
 
   flash_ring(CRGB(0, 0, 0)); // reset ring/off
-  //audioTrigger(99);
+  audioTrigger(97); //confirmation
   current_mode = mode;
 }
 
@@ -152,12 +152,12 @@ void loop() {
       if (p1.currentPos() != 0 && p1.currentPos() == rand_led) {
         flash_ring(CRGB(0, 0, 0));
         flash_ring(p1color);
-        //audioTrigger(99);
+        audioTrigger(99); //correct
       }
       else if (p2.currentPos() != 0 && p2.currentPos() == rand_led) {
         flash_ring(CRGB(0, 0, 0));
         flash_ring(p2color);
-        //audioTrigger(99);
+        audioTrigger(99); // correct
       }
 
       generate_random(millis(), delay_interval, CRGB(255, 0, 0));
@@ -194,7 +194,7 @@ void reset_combo(byte arr[], byte len) {
 void play_secret_bonus() {
   fill_rainbow( leds, NUM_LEDS, 0, 20);
   //fill_rainbow_circular(leds, NUM_LEDS,0,false);
-  //audioTrigger(99);
+  audioTrigger(97); // conf.
   FastLED.show();
   delay(1000);
 }
@@ -240,7 +240,7 @@ void play_combo(Player &player, Player &opponent, byte turn) {
         delay(500);
         combo_game_turn++;
         move_displayed  = false;
-        //audioTrigger(99);
+        audioTrigger(99); // success
         // serial.println("COMBO SUCCESS");
       }
       else {
@@ -248,7 +248,7 @@ void play_combo(Player &player, Player &opponent, byte turn) {
         flash_ring(CRGB(255, 0, 0));
         delay(500);
         move_displayed  = false;
-        //audioTrigger(98);
+        audioTrigger(98); // fail
         // serial.println("COMBO FAIL");
       }
       // testing output
@@ -383,6 +383,7 @@ void ledController_update() {
 }
 
 void audioTrigger(int index) {
+  Serial.println("send signal");
   Serial.println(index);
   if (index > 0) {
     Wire.beginTransmission(0x67);  // transmit to device #8
