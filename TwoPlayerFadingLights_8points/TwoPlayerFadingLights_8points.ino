@@ -167,19 +167,19 @@ void loop() {
          add array of prev moves to each player, update
       */
 
-      /*ledController_Playerinput(p1.currentPos(), p1color);
+      ledController_Playerinput(p1.currentPos(), p1color);
       ledController_Playerinput(p2.currentPos(), p2color);
 
 
       if (combo_game_turn % 2 == 0) play_combo(p1, p2, combo_game_turn);
-      else play_combo(p2, p1, combo_game_turn);*/
+      else play_combo(p2, p1, combo_game_turn);
 
       break;
   }
   ledController_update();
 }
 
-/*
+
 // fill combo-array with zeroes
 void reset_combo(byte arr[], byte len) {
   for (byte i = 0; i < len; i++) {
@@ -276,7 +276,7 @@ bool compare_combo(byte arr1[], byte arr2[], byte len) {
   return true;
 }
 
-*/
+
 
 // print combo array to // serial monitor
 /*void print_combo(byte arr[], byte len) {
