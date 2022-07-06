@@ -63,6 +63,7 @@ void Player::check_combo(byte c_pos, byte p_pos, long c_millis, long match_durat
     for (int i=0; i<combo_length; i++){
       if (Player::combo[i] == 0){
         Player::combo[i] = c_pos;
+        //audioTrigger(99);
         break;
       }
     }
@@ -71,6 +72,15 @@ void Player::check_combo(byte c_pos, byte p_pos, long c_millis, long match_durat
   }
 }
 
+void Player::audioTrigger(int index) {
+  Serial.println(index);
+  if (index > 0) {
+    Wire.beginTransmission(0x67);  // transmit to device #8
+    Wire.write(index);             // sends one byte
+    Wire.endTransmission();        // stop transmitting
+    delay(350);
+  }
+}
 
 byte Player::currentPos()
 {

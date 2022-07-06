@@ -13,7 +13,7 @@ private:
   bool forward_F, forward_h, backward_F, backward_h, left_F, left_h, right_F, right_h, xNull, yNull, isCPU, is_match;
   float THRESHOLD;
   byte prev_pos, current_pos, combo_length;
-  void check_combo(byte c_pos, byte p_pos, long c_millis, long match_duration);
+  void check_combo(byte c_pos, byte p_pos, long c_millis, long match_duration), audioTrigger(int index);
   long match_time;
 
 public:
